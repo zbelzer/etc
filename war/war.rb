@@ -6,14 +6,10 @@ Card = Struct.new(:suit, :number) do
   def to_s
     number_name =
       case number
-      when 1
-        "ace"
-      when 11
-        "jack"
-      when 12
-        "queen"
-      when 13
-        "king"
+      when 1 then "ace"
+      when 11 then "jack"
+      when 12 then "queen"
+      when 13 then "king"
       else
         number.to_s
       end
@@ -33,12 +29,10 @@ Card = Struct.new(:suit, :number) do
 end
 
 class Hand < DelegateClass(Array)
+  alias draw shift
+
   def collect(cards)
     push(*cards)
-  end
-
-  def draw
-    shift
   end
 
   def to_s
@@ -79,11 +73,11 @@ class Game
     loop do
       if @hand1.empty?
         puts
-        puts "Player 2 Wins! #{@hand2.size}"
+        puts "Player 2 Wins!"
         break
       elsif @hand2.empty?
         puts
-        puts "Player 1 Wins! #{@hand1.size}"
+        puts "Player 1 Wins!"
         break
       end
 
@@ -121,11 +115,11 @@ class Game
       case card1 <=> card2
       when 1
         print indent
-        puts "Player 1 wins"
+        puts "Player 1 wins match"
         @hand1.collect(pile)
       when -1
         print indent
-        puts "Player 2 wins"
+        puts "Player 2 wins match"
         @hand2.collect(pile)
       when 0
         play_tie(indent, pile)
