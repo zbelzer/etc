@@ -1,12 +1,12 @@
 require "benchmark"
 
-# Basic recursive fibonacci
+# Basic recursive fibonacci O(2^n)
 def recurse_fib(n)
   return n if n <= 1 
   recurse_fib(n - 2) + recurse_fib(n - 1)
 end
 
-# Recursive fibonacci with a dab of caching
+# Recursive fibonacci with a dab of caching O(n)
 def cached_fib(n, h = {})
   if cached = h[n] 
     return cached
@@ -17,7 +17,7 @@ def cached_fib(n, h = {})
   h[n] = cached_fib(n - 2, h) + cached_fib(n - 1, h)
 end
 
-# Iteration
+# Iteration O(n)
 def iterative_fib(n)
   return n if n <= 1 
 
