@@ -1,23 +1,82 @@
+require 'pry'
 # Creational Patterns
 # =============================================================================
 
 # Abstract Factory:
 # Provide an interface for creating families of related or dependent objects
 # without specifying their concrete classes.
+
+# In the wild: ActiveRecord::Base
 #
 # Example in Ruby:
-#
-# In the wild:
+
+module FooFeature
+  def self.widget
+    Widget.new
+  end
+  
+  class Widget
+    def self.run
+      puts "I ran like Foo"
+    end
+  end
+end
+
+module BarFeature
+  def self.widget
+    Widget.new
+  end
+
+  class Widget
+    def self.run
+      puts "I ran like Bar"
+    end
+  end
+end
+
+class Application
+  def initialize(feature)
+    widget = feature.widget
+    widget.run
+  end
+end
+
+if RUN_FOO
+  Application.new(FooFeature)
+else
+  Application.new(WinGuiToolkit)
+end
 
 
 # Builder:
 # Separate the construction of a complex object from its representation so that
 # the same construction process can create different representations.
 #
-# Example in Ruby:
+# In the wild: ActionView::Template
 #
-# In the wild:
+# Example in Ruby:
 
+class WidgetBuilder
+  def initialize(options)
+    @options = options
+  end
+
+  def build(widget_type)
+    widget = widget_finder(@options[:type]).new
+    widget.feature = @options[:feature]
+    widget
+  end
+
+  def widget_finder(type)
+    case type
+    when :foo then FooWidget
+    when :bar then BarWidget
+    end
+  end
+end
+
+builder = WidgetBuilder.new(options)
+widget = builder.build
 
 # Factory Method:
 # Define an interface for creating an object, but let subclasses decide which
@@ -28,15 +87,81 @@
 #
 # In the wild:
 
+class Widget
+  def initialize
+    @property = decide_property
+  end
+end
+
+class FooWidget < Widget
+  def decide_property
+    :foo
+  end
+end
+
+class BarWidget < Widget
+  def decide_property
+    :bar
+  end
+end
 
 # Prototype:
 # Specify the kinds of objects to create using a prototypical instance, and
 # creating new objects by copying this prototype.
 #
-# Example in Ruby:
-#
 # In the wild:
+#
+# Example in Ruby:
 
+Track = Struct.new(:length, :bend) do
+  attr_reader :next_track, :previous_track
+
+  def append(other)
+    @next_track = other
+    other.prepend(self) unless other.previous_track == self
+    @next_track
+  end
+
+  def prepend(other)
+    @previous_track = other
+    other.append(self) unless other.next_track == self
+    @previous_track
+  end
+end
+
+module TrackBox
+  extend self
+
+  def fetch(options)
+    @prototypes ||= {}
+
+    name = name_from_options(options)
+
+    unless proto = @prototypes[name]
+      proto = Track.new(options[:length], options[:bend])
+      save_design(name, proto)
+    end
+
+    proto.clone
+  end
+
+  def name_from_options(options)
+    name = options.delete(:name)
+    name || "#{options[:length]}_#{options[:bend]}"
+  end
+
+  def save_design(name, object)
+    @prototypes[name] = object
+  end
+end
+
+current = TrackBox.fetch(length: 2, bend: :none)
+current = current.append(TrackBox.fetch(length: 4, bend: :left))
+current = current.append(TrackBox.fetch(length: 4, bend: :right))
+current = current.append(TrackBox.fetch(length: 2, bend: :none))
+
+TrackBox.save_design(:s_curve, current)
+TrackBox.fetch(name: :s_curve)
 
 # Singleton:
 # Ensure a class only has one instance and provide a global point of access to
