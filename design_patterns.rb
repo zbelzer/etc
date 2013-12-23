@@ -43,7 +43,7 @@ end
 if RUN_FOO
   Application.new(FooFeature)
 else
-  Application.new(WinGuiToolkit)
+  Application.new(BarFeature)
 end
 
 
