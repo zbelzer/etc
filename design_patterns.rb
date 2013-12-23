@@ -167,9 +167,41 @@ TrackBox.fetch(name: :s_curve)
 # Ensure a class only has one instance and provide a global point of access to
 # it.
 #
-# Example in Ruby:
+# References:
+# https://practicingruby.com/articles/ruby-and-the-singleton-pattern-dont-get-along?u=dc2ab0f9bb
 #
 # In the wild:
+#
+# Mime::NullType             actionpack/lib/action_dispatch/http/mime_type.rb
+# ActiveSupport::Deprecation activesupport/lib/active_support/deprecation.rb
+#
+# Example in Ruby:
+
+# Use the Ruby Module
+class Logger
+  include Singleton
+  def error(message)
+    $stderr.puts(message)
+  end
+end
+Logger.instance.error("Danger!")
+
+# Use a Module with Module class-methods
+module Logger
+  def self.error(message)
+    $stderr.puts(message)
+  end
+end
+Logger.error("Danger!")
+
+# Use a fresh object with singleton methods
+Logger = Object.new
+class << Logger
+  def error(message)
+    $stderr.puts(message)
+  end
+end
+Logger.error("Danger!")
 
 
 # Structural Patterns
