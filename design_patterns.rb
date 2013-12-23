@@ -1,4 +1,3 @@
-require 'pry'
 # Creational Patterns
 # =============================================================================
 
@@ -78,14 +77,15 @@ end
 builder = WidgetBuilder.new(options)
 widget = builder.build
 
+
 # Factory Method:
 # Define an interface for creating an object, but let subclasses decide which
 # class to instantiate. +Factory Method+ lets a class defer instantiation to
 # subclasses.
 #
-# Example in Ruby:
-#
 # In the wild:
+#
+# Example in Ruby:
 
 class Widget
   def initialize
@@ -209,22 +209,97 @@ Logger.error("Danger!")
 
 # Adapter:
 # Convert the interface of a class into another interface clients expect.
-# Adapter lets classes work together that couldn't otherwise because of
+# +Adapter+ lets classes work together that couldn't otherwise because of
 # incompatible interfaces.
 #
-# Example in Ruby:
-#
 # In the wild:
+# Capybara::Driver::Base                           capybara/lib/capybara/driver.rb
+# ActiveRecord::ConnectionAdapter::AbstractAdapter activerecord/lib/active_record/connection_adapters.rb
+#
+# Example in Ruby:
+class WebTester
+  def run
+    adapter.new(Browser.new)
+    adapter.visit('page')
+  end
+end
+
+class Browser
+  def render(page)
+    # Renders a page of HTML to text
+  end
+end
+
+BrowserAdapter = Struct.new(:browser) do
+  def visit(page)
+    browser.render(page)
+  end
+end
+
+WebTester.run
 
 
 # Bridge:
 # Decouple an abstraction from its implementation so that the two can vary
 # independently.
 #
-# Example in Ruby:
+# Resources:
+# http://en.wikibooks.org/wiki/Computer_Science_Design_Patterns/Bridge
+# http://java.dzone.com/articles/design-patterns-bridge
+#
+# Notes: It seems like the difference here with adapters is that the interface
+# to the components is the same. This is like having your core functionality as
+# a composite so you can change it out with another without making any subclasses.
+# An example of this for the following example would be SamsungRemote and SonyRemote.
 #
 # In the wild:
+#
+# Example in Ruby:
 
+class SonyTV < TV
+  def on; end
+  def off; end
+  def set_channel; end
+end
+
+class SamsungTV < TV
+  def on; end
+  def off; end
+  def set_channel; end
+end
+
+class RemoteControl
+  def initialize(implementor)
+    @implementor = implementor
+  end
+
+  def on
+    @implementor.on
+  end
+
+  def off
+    @implementor.off
+  end
+
+  def set_channel(number)
+    @implementor.set_channel(number)
+  end
+end
+
+class FancyRemoteControl < RemoteControl
+  def initialize(implementor)
+    super(implementor)
+    @current_number = 10
+  end
+
+  def next
+    set_channel(@current_number += 1)
+  end
+
+  def previous
+    set_channel(@current_number -= 1)
+  end
+end
 
 # Composite:
 # Compose objects into tree structures to represent part-whole hierarchies.
@@ -240,10 +315,41 @@ Logger.error("Danger!")
 # Attach additional responsibilities to an object dynamically.  Decorators
 # provide a flexible alternative to subclassing for extending functionality.
 #
-# Example in Ruby:
-#
 # In the wild:
+#
+# Example in Ruby:
+Widget = Struct.new(:name)
 
+# Method missing version
+class FancyWidgetDecorator
+  def initialize(foo_widget)
+    @foo_widget = foo_widget
+  end
+
+  def fancy_name
+    "#{@foo_widget.name} Mc#{@foo_widget.name}erson"
+  end
+
+  def method_missing(name, *args, &block)
+    if @foo_widget.respond_to?(name)
+      @foo_widget.send(name, *args, &block)
+    else
+      super(name, *args, &block)
+    end
+  end
+end
+
+FancyWidgetDecorator.new(Widget.new("Steve")).fancy_name
+
+# DelegateClass version
+require 'delegate'
+class FancyWidgetDecorator < DelegateClass(Widget)
+  def fancy_name
+    "#{name} Mc#{name}erson"
+  end
+end
+
+FancyWidgetDecorator.new(Widget.new("Steve")).fancy_name
 
 # Facade:
 # Provide a unified interface to a set of interfaces in a subsystem.  +Facade+
