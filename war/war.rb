@@ -2,7 +2,11 @@
 
 require 'delegate'
 
+# A Card from a deck of playing cards.
 Card = Struct.new(:suit, :number) do
+  # Pretty print a card.
+  #
+  # @return [String]
   def to_s
     number_name =
       case number
@@ -17,6 +21,9 @@ Card = Struct.new(:suit, :number) do
     "#{number_name.capitalize} of #{suit.to_s.capitalize}"
   end
 
+  # Compare two cards.
+  #
+  # @return [Integer]
   def <=>(other)
     if number == 1 && other.number == 1
       0
@@ -31,80 +38,121 @@ end
 class Hand < DelegateClass(Array)
   alias draw shift
 
+  # The action of taking a pile of cards and putting it back on your own.
+  # Shuffling the cards before adding them back to the hand prevents "endless
+  # war."
+  #
+  # http://www.rajgiri.net/index.php
+  #
+  # @param [Array<Card>] cards
+  # @return [Array<Card>]
   def collect(cards)
-    push(*cards)
+    push(*(cards.shuffle))
   end
 
+  # Pretty-print a hand.
+  #
+  # @return [String]
   def to_s
-    sort.each { |card| puts card.to_s }
+    sort.map(&:to_s).join("\n")
   end
 end
 
+# A standard deck of cards.
 class Deck
+  # List of suits in a deck of cards.
+  SUITS = [:diamonds, :clubs, :hearts, :spades]
+
+  # Create a new standard deck of cards.
   def initialize
     @cards = []
 
-    [:hearts, :spades, :diamonds, :clubs].each do |suit|
+    SUITS.each do |suit|
       (1..13).each do |number|
         @cards << Card.new(suit, number)
       end
     end
   end
 
+  # Shuffle (randomize) the cards in a Deck.
+  #
+  # @return [Deck]
   def shuffle
     @cards.shuffle!
+
+    self
   end
 
+  # Split the deck into two halves.
+  #
+  # @return [Hand, Hand]
   def deal
     return Hand.new(@cards[0...26]), Hand.new(@cards[26..-1])
   end
 end
 
-
-class Game
+class Listener
   def initialize
-    deck = Deck.new
-    deck.shuffle
-
-    @hand1, @hand2 = deck.deal
+    @indent = 0
   end
 
-  def run
+  def announce(string)
+    print ' ' * @indent
+    puts string
+  end
+
+  def increment
+    @indent += 1
+  end 
+  def decrement
+    @indent -= 1
+  end
+end
+
+# A representation for an actual War card game played between two players.
+class Game
+  attr_reader :listener, :hand1, :hand2
+
+  # Creates a new game.
+  def initialize(listener)
+    @listener      = listener
+    @hand1, @hand2 = Deck.new.shuffle.deal
+  end
+
+  # Play War.
+  def play
     loop do
       if @hand1.empty?
-        puts
-        puts "Player 2 Wins!"
+        listener.announce "Player 2 Wins!"
         break
       elsif @hand2.empty?
-        puts
-        puts "Player 1 Wins!"
+        listener.announce "Player 1 Wins!"
         break
       end
 
-      play_match
+      play_hand
     end
   end
 
-  def play_match(indent = " ", pile = [])
+  # Play a hand in War.
+  def play_hand(pile = [])
     card1 = @hand1.draw
     card2 = @hand2.draw
 
     pile.push(card1, card2).compact!
 
-    indent = " " * (pile.size / 2)
+    listener.increment
 
-    print indent
     if card1.nil?
-      puts "Player 1 is out of cards"
+      listener.announce "Player 1 is out of cards"
     else
-      puts "Player 1: #{card1.to_s}"
+      listener.announce "Player 1: #{card1.to_s}"
     end
 
-    print indent
     if card2.nil?
-      puts "Player 2 is out of cards"
+      listener.announce "Player 2 is out of cards"
     else
-      puts "Player 2: #{card2.to_s}"
+      listener.announce "Player 2: #{card2.to_s}"
     end
 
     if card1.nil?
@@ -114,32 +162,34 @@ class Game
     else
       case card1 <=> card2
       when 1
-        print indent
-        puts "Player 1 wins match"
+        listener.announce "Player 1 wins hand"
         @hand1.collect(pile)
       when -1
-        print indent
-        puts "Player 2 wins match"
+        listener.announce "Player 2 wins hand"
         @hand2.collect(pile)
       when 0
-        play_tie(indent, pile)
+        play_tie(pile)
       end
     end
+
+    listener.decrement
   end
 
-  def play_tie(indent, pile)
-    print indent
-    puts "Draw: Each player draws two cards"
+  # Play out a tie between players.
+  #
+  # @param [Array<Cards>] pile Current stack of cards on the table
+  def play_tie(pile)
+    listener.announce "Draw: Each player draws three cards"
 
-    2.times do
+    3.times do
       pile << @hand1.draw
       pile << @hand2.draw
     end
 
-    play_match(indent, pile)
+    play_hand(pile)
   end
 end
 
 if __FILE__ == $0
-  Game.new.run
+  Game.new(Listener.new).play
 end
