@@ -63,14 +63,16 @@ class Deck
   # List of suits in a deck of cards.
   SUITS = [:diamonds, :clubs, :hearts, :spades]
 
+  # Typical numbers in a deck of cards.
+  NUMBERS = (1..13).to_a
+
+
   # Create a new standard deck of cards.
   def initialize
     @cards = []
 
-    SUITS.each do |suit|
-      (1..13).each do |number|
-        @cards << Card.new(suit, number)
-      end
+    (SUITS).product(NUMBERS) do |suit, number|
+      @cards << Card.new(suit, number)
     end
   end
 
