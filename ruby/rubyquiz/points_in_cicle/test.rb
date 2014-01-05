@@ -3,7 +3,7 @@ require_relative 'point_generator'
 points    = []
 generator = PointGenerator.new(21, Point.new(10, 0))
 
-10000.times do
+100.times do
   points << generator.generate
 end
 
